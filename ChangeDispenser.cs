@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace QikChargerApplication
+namespace Qik
 {
     /// <summary>
     /// This class dispenses the change the user is supposed to receive when the money
@@ -29,7 +29,7 @@ namespace QikChargerApplication
         public bool dispenseChange(int change)
         {
 
-            return false;
+            return true;
         }
 
     }//end ChangeDispenser
