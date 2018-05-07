@@ -1,0 +1,189 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{74829854-F437-49B1-9914-5D046721C099}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Qik</RootNamespace>
+    <AssemblyName>Qik</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BillCollector.cs" />
+    <Compile Include="ChangeDispenser.cs" />
+    <Compile Include="ChargePhone.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ChargePhone.Designer.cs">
+      <DependentUpon>ChargePhone.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Charger.cs" />
+    <Compile Include="CoinAcceptor.cs" />
+    <Compile Include="Crc16.cs" />
+    <Compile Include="FileManager.cs" />
+    <Compile Include="MoneyMachine.cs" />
+    <Compile Include="Printer.cs" />
+    <Compile Include="QikTop.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="QikTop.Designer.cs">
+      <DependentUpon>QikTop.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Machine_Setup.cs" />
+    <Compile Include="MoneyProcessing.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SerialPorts.cs" />
+    <Compile Include="Slot.cs" />
+    <Compile Include="SlotsClass.cs" />
+    <Compile Include="Transact.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Transact.Designer.cs">
+      <DependentUpon>Transact.cs</DependentUpon>
+    </Compile>
+    <Compile Include="VendingMachine.cs" />
+    <EmbeddedResource Include="ChargePhone.resx">
+      <DependentUpon>ChargePhone.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="QikTop.resx">
+      <DependentUpon>QikTop.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <EmbeddedResource Include="Transact.resx">
+      <DependentUpon>Transact.cs</DependentUpon>
+    </EmbeddedResource>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\light-bulb-3104355_960_720.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\thankyou.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\thankyou1.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\1.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\thankyou2.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\11.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\12.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\3.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\6.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\pay3.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\smartphone3.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Webp.net-gifmaker.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\chargee.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\charger.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\check2.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\check.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\check1.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\check11.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\wong.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\wong1.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\check3.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\QikCharge logo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\QikCharge logo1.png" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

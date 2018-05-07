@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace QikChargerApplication
+namespace Qik
 {
     /// <summary>
     /// This class provides a means to store and retrieve the status of the
@@ -15,11 +15,11 @@ namespace QikChargerApplication
         /// <summary>
         /// URL/Filename of the file to log to.
         /// </summary>
-        private File LogFile;
+       // private File LogFile;
         /// <summary>
         /// URL/File name of the file to store the vending machine status to.
         /// </summary>
-        private File StatusFile;
+      //  private File StatusFile;
 
 
 

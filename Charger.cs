@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace QikChargerApplication
+namespace Qik
 {
     /// <summary>
     /// This class starts and stops changing the device in the slot.
