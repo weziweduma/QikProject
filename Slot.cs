@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace QikChargerApplication
+namespace Qik
 {
     /// <summary>
     /// This class keeps track of the states for the charging slots and handles the
@@ -12,9 +12,20 @@ namespace QikChargerApplication
     public class Slot
     {
         /// <summary>
+        /// Current status: CHARGING, FINISHED_OCCUPIED, AVAILABLE
+        /// </summary>
+        public enum e_Status
+        {
+            AVAILABLE, OCCUPIED_CHARGING, OCCUPIED_FINISHED
+        }
+        /// <summary>
         /// The amount of time to charge for
         /// </summary>
         private int ChargingTime;
+        /// <summary>
+        /// The remaining amount of time to charge for
+        /// </summary>
+        private int RemainingChargingTime;
         /// <summary>
         /// Slot identifier
         /// </summary>
@@ -24,18 +35,23 @@ namespace QikChargerApplication
         /// </summary>
         private int Password;
         /// <summary>
-        /// Current status: CHARGING, FINISHED_OCCUPIED, AVAILABLE
+        /// Current status: AVAILABLE, OCCUPIED_CHARGING, OCCUPIED_FINISHED
         /// </summary>
-        private Enum Status;
+        private e_Status Status;
         /// <summary>
         /// The elapsed charging time timer
         /// </summary>
-        private Timer Timer;
-        public System.QikApplication.VendingMachine.Slot.Charger m_Charger;
+    //    private Timer Timer;
+      //  static System.Timers.Timer timer;
+        public Charger m_Charger;
 
         public Slot( int Id)
         {
             ID = Id;
+            m_Charger = new Charger();
+   //         timer = new System.Timers.Timer();
+   //         timer.Elapsed += timeElapsed;
+   //         timer.Enabled = true;
         }
 
         ~Slot()
@@ -57,10 +73,10 @@ namespace QikChargerApplication
         /// Retrieve the remaining charging time for the slot
         /// </summary>
         /// <param name="ChargeTime"></param>
-        public int getChargeTime(int ChargeTime)
+        public int getChargeTime()
         {
 
-            return 0;
+            return RemainingChargingTime;
         }
 
         /// <summary>
@@ -69,7 +85,7 @@ namespace QikChargerApplication
         public int getID()
         {
 
-            return 0;
+            return ID;
         }
 
         /// <summary>
@@ -78,16 +94,16 @@ namespace QikChargerApplication
         public int getPassword()
         {
 
-            return 0;
+            return Password;
         }
 
         /// <summary>
         /// Retrive the the status of this slot.
         /// </summary>
-        public Enum getStatus()
+        public e_Status getStatus()
         {
 
-            return null;
+            return Status;
         }
 
         /// <summary>
@@ -104,16 +120,18 @@ namespace QikChargerApplication
         /// </summary>
         public void reset()
         {
-
+            ChargingTime = 0;
+            Status = e_Status.AVAILABLE;
+            Password = 0;
         }
 
         /// <summary>
         /// Set the charge time for the slot
         /// </summary>
-        public int setChargeTime()
+        public bool setChargeTime(int ChargeTime)
         {
-
-            return 0;
+            this.ChargingTime = ChargeTime;
+            return true;
         }
 
         /// <summary>
@@ -122,17 +140,17 @@ namespace QikChargerApplication
         /// <param name="Password"></param>
         public bool setPassword(int Password)
         {
-
-            return false;
+            this.Password = Password;
+            return true;
         }
 
         /// <summary>
         /// Set the status of the slot: CHARGING, AVAILABLE etc.
         /// </summary>
         /// <param name="Status"></param>
-        public int setStatus(Enum Status)
+        public int setStatus(e_Status Status)
         {
-
+            this.Status = Status;
             return 0;
         }
 
@@ -141,7 +159,9 @@ namespace QikChargerApplication
         /// </summary>
         public int startTimer()
         {
-
+   //         timer.Interval = 60 * 1000; //1 minute
+            RemainingChargingTime = ChargingTime;
+   //         timer.Start();
             return 0;
         }
 
@@ -150,9 +170,18 @@ namespace QikChargerApplication
         /// </summary>
         public int stopTimer()
         {
-
+    //        timer.Stop();
             return 0;
         }
-
+  /*      public void timeElapsed(object sender, EventArgs e)
+        {
+            RemainingChargingTime -= ChargingTime;
+            if (RemainingChargingTime == 0)
+            {
+                ChargingTime = 0;
+                stopTimer();
+            }
+        }
+*/
     }//end Slot
 }

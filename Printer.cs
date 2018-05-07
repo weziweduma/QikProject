@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace QikChargerApplication
+namespace Qik
 {
     /// <summary>
     /// This class prints the specified text for the user.
@@ -27,8 +27,8 @@ namespace QikChargerApplication
         /// <param name="PrintText"></param>
         public bool print(string PrintText)
         {
-
-            return false;
+            Console.Write(PrintText);
+            return true;
         }
 
     }//end Printer
