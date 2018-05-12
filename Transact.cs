@@ -71,7 +71,7 @@ namespace Qik
       //      Slots_trans = Slots;
       //      selectedSlot = selected_slot;
             initialise();
-            QikTop.vending.gotoNextStage += gotoPayment;                //Handler called when VendingMachine generates events
+           
            // PaymentEvent += QikTop.vending.PaymentProcess;      //Handlers called in VendingMachine when this form generates this event
         }
 

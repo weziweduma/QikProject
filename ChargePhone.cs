@@ -101,10 +101,7 @@ namespace Qik
            // Receive_Money = ReceiveMoney;
             // Slots_charge = slots;  
             initialise();
-            QikTop.vending.gotoNextStage += gotoSlotSelection;                //Handler called when VendingMachine generates events
-            SlotSelectedEvent            += QikTop.vending.SlotSelected;      //Handlers called in VendingMachine when this form generates this event
-            ChargeTimeEvent              += QikTop.vending.ChargeTimeEntered; //Handlers called in VendingMachine when this form generates this event
-            PasswordEvent                += QikTop.vending.PasswordEntered;   //Handlers called in VendingMachine when this form generates this event
+
         }
         /// <summary>
         /// Initialize the variables and classes 
@@ -225,14 +222,15 @@ namespace Qik
         {
             Button SlotButton = sender as Button;
             SlotSelectedEventArgs SlotSelectedArg = new SlotSelectedEventArgs();
-            SlotSelectedArg.Slot = Locker_buttons.IndexOf(SlotButton) + 1;
+            SlotSelectedArg.Slot = Locker_buttons.IndexOf(SlotButton);
             EventHandler<SlotSelectedEventArgs> SlotSelectedHandler = SlotSelectedEvent;
             if (SlotSelectedHandler != null)
             {
                 SlotSelectedHandler(this, SlotSelectedArg);
             }
             Console.WriteLine("Button is " + SlotButton.Name);
-            SlotButtonPanel.Enabled = false;
+            Console.WriteLine("Button ID is " + (Locker_buttons.IndexOf(SlotButton) + 1));
+           // SlotButtonPanel.Enabled = false;
         }
     /*    void lbl_textchanged(object sender, EventArgs e)
         {
@@ -262,7 +260,7 @@ namespace Qik
         {
             Button ChargeTimeButton = sender as Button;
             ChargeTimeEventArgs ChargeTimeArg = new ChargeTimeEventArgs();
-            string temp = ChargeTimeButton.Text.Remove(2);// Split(" ", 1, null).ToArray;
+            string temp = ChargeTimeButton.Text.Remove(3);// Split(" ", 1, null).ToArray;
             ChargeTimeArg.ChargeTime = int.Parse(temp);
             EventHandler<ChargeTimeEventArgs> ChargeTimeHandler = ChargeTimeEvent;
             if (ChargeTimeHandler != null)
@@ -364,61 +362,62 @@ namespace Qik
                 ChargePeriodPn.Visible = false;
                 SetPasswordPn.Enabled = false;
                 SetPasswordPn.Visible = false;
-                for(int i = 0; i < VendingMachine.NumSlots; i ++)
+                System.Console.WriteLine("Charging? " + e.ChargingOrRetrieving);
+                foreach(Slot slot in QikTop.vending.AvailableSlots)
                 {
-                    if(i < QikTop.vending.AvailableSlots.Count)
-                    {
-                      Locker_status.ElementAt(QikTop.vending.AvailableSlots.ElementAt(i).getID() - 1).BackColor = Color.White;
-                      Locker_status[QikTop.vending.AvailableSlots.ElementAt(i).getID() - 1].Text = "Available";
+                      Locker_status.ElementAt(slot.getID()).BackColor = Color.White;
+                      Locker_status.ElementAt(slot.getID()).Text = "Available";
                       if (e.ChargingOrRetrieving == VendingMachine.e_ChargingOrRetrieving.CHARGING)
                       {
-                          Locker_buttons[QikTop.vending.AvailableSlots.ElementAt(i).getID() - 1].Enabled = true;
+                          Locker_buttons.ElementAt(slot.getID()).Enabled = true;
                       }
                       else
                       {
-                          Locker_buttons[QikTop.vending.AvailableSlots.ElementAt(i).getID() - 1].Enabled = false;
+                          Locker_buttons.ElementAt(slot.getID()).Enabled = false;
                       }
-                    }
-                    if(i < QikTop.vending.BusySlots.Count)
-                    {
-                      Locker_status[QikTop.vending.BusySlots.ElementAt(i).getID() - 1].BackColor = Color.Red;
-                      Locker_status[QikTop.vending.BusySlots.ElementAt(i).getID() - 1].Text = "Busy Charging";
+                }
+                foreach (Slot slot in QikTop.vending.BusySlots)
+                {
+                    System.Console.WriteLine("slot.getID()  " + slot.getID());
+                      Locker_status.ElementAt(slot.getID()).BackColor = Color.Red;
+                      Locker_status.ElementAt(slot.getID()).Text = "Busy Charging";
                       if (e.ChargingOrRetrieving == VendingMachine.e_ChargingOrRetrieving.CHARGING)
                       {
-                          Locker_buttons[QikTop.vending.AvailableSlots.ElementAt(i).getID() - 1].Enabled = false;
+                          Locker_buttons.ElementAt(slot.getID()).Enabled = false;
                       }
                       else
                       {
-                          Locker_buttons[QikTop.vending.AvailableSlots.ElementAt(i).getID() - 1].Enabled = true;
+                          Locker_buttons.ElementAt(slot.getID()).Enabled = true;
                       }
-                    }
-                    if(i < QikTop.vending.FinishedSlots.Count)
-                    {
-                      Locker_status[QikTop.vending.FinishedSlots.ElementAt(i).getID() - 1].BackColor = Color.Red;
-                      Locker_status[QikTop.vending.FinishedSlots.ElementAt(i).getID() - 1].Text = "Waiting Retrieve";
+                    
+                }
+                foreach (Slot slot in QikTop.vending.FinishedSlots)
+                {
+                      Locker_status.ElementAt(slot.getID()).BackColor = Color.Red;
+                      Locker_status.ElementAt(slot.getID()).Text = "Waiting Retrieve";
                       if (e.ChargingOrRetrieving == VendingMachine.e_ChargingOrRetrieving.CHARGING)
                       {
-                          Locker_buttons[QikTop.vending.AvailableSlots.ElementAt(i).getID() - 1].Enabled = false;
+                          Locker_buttons.ElementAt(slot.getID()).Enabled = false;
                       }
                       else
                       {
-                          Locker_buttons[QikTop.vending.AvailableSlots.ElementAt(i).getID() - 1].Enabled = true;
+                          Locker_buttons.ElementAt(slot.getID()).Enabled = true;
                       }
-                    }
-                    if(i < QikTop.vending.OverdueSlots.Count)
-                    {
-                      Locker_status[QikTop.vending.OverdueSlots.ElementAt(i).getID() - 1].BackColor = Color.Red;
-                      Locker_status[QikTop.vending.OverdueSlots.ElementAt(i).getID() - 1].Text = "Waiting Retrieve";
+                }
+                foreach (Slot slot in QikTop.vending.OverdueSlots)
+                {
+                      Locker_status.ElementAt(slot.getID()).BackColor = Color.Red;
+                      Locker_status.ElementAt(slot.getID()).Text = "Waiting Retrieve";
                       if (e.ChargingOrRetrieving == VendingMachine.e_ChargingOrRetrieving.CHARGING)
                       {
-                          Locker_buttons[QikTop.vending.AvailableSlots.ElementAt(i).getID() - 1].Enabled = false;
+                          Locker_buttons.ElementAt(slot.getID()).Enabled = false;
                       }
                       else
                       {
-                          Locker_buttons[QikTop.vending.AvailableSlots.ElementAt(i).getID() - 1].Enabled = true;
-                      }
-                    }
+                          Locker_buttons.ElementAt(slot.getID()).Enabled = true;
+                      } 
                 }                          
+            
             }
             else if (e.UI_Stage == VendingMachine.e_CurrentUIstage.CHARGE_TIME_STAGE)
             {

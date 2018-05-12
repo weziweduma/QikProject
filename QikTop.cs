@@ -109,6 +109,11 @@ namespace Qik
             //this.SlotSelectedEvent   += vending.SlotSelected;
            // this.ChargeTimeEvent     += vending.ChargeTimeEventEntered;
             vending.gotoNextStage    += gotoSlotSelection;
+            vending.gotoNextStage += charge_phone.gotoSlotSelection;                //Handler called when VendingMachine generates events
+            vending.gotoNextStage += trans.gotoPayment;                //Handler called when VendingMachine generates events
+            charge_phone.SlotSelectedEvent += vending.SlotSelected;      //Handlers called in VendingMachine when this form generates this event
+            charge_phone.ChargeTimeEvent += vending.ChargeTimeEntered; //Handlers called in VendingMachine when this form generates this event
+            charge_phone.PasswordEvent += vending.PasswordEntered;   //Handlers called in VendingMachine when this form generates this event
            // this.PaymentEvent += vending.PaymentEvent;
             //charge_phone.FormClosed += new FormClosedEventHandler(charge_phone_FormClosed);
             charge_phone.Hide();
@@ -124,7 +129,6 @@ namespace Qik
         private void ChoiceButton_Click(object sender, EventArgs e)
         {
             Button ChoiceButton = sender as Button;
-            Console.WriteLine("Are you there?");
             ChargeRetrieveEventArgs ChargeRetrieveArg = new ChargeRetrieveEventArgs();
             if (ChoiceButton.Name.Equals(ChargeButton.Name))
             {
@@ -134,12 +138,12 @@ namespace Qik
             {
                 ChargeRetrieveArg.ChargeRetrieve = VendingMachine.e_ChargingOrRetrieving.RETRIEVING;
             }
+            System.Console.WriteLine("Charging Choice " + ChargeRetrieveArg.ChargeRetrieve);
             EventHandler<ChargeRetrieveEventArgs> chargeRetrieveHandler = ChargeRetrieveEvent;
             if (chargeRetrieveHandler != null)
             {
                 chargeRetrieveHandler(this, ChargeRetrieveArg);
             }
-            Console.WriteLine("Are you there?");
         }
         /// <summary>
         /// Displays the form as instructed by the VendingMachine class and hides if the 
@@ -171,7 +175,7 @@ namespace Qik
 
             //images_dir = @"D:\personal\Boaz\Software_Develepment\InterimSoftware\QikCharge_Ver1\ConsoleApplication1\images\panel_images\" + Convert.ToString(count) + ".jpg";
             images_dir = @"..\..\Resources\images\panel_images\" + Convert.ToString(count) + ".jpg";
-            Console.WriteLine(images_dir);
+            //Console.WriteLine(images_dir);
 
             panel1.BackgroundImage = Image.FromFile(@images_dir);
             if (count == 9) count = 1;

@@ -128,8 +128,14 @@ namespace Qik
 			ChangeDispenser m_ChangeDispenser;
 			MoneyMachine m_MoneyMachine;
 			FileManager m_FileManager;
-
+            /// <summary>
+            /// Number of slots on the vending machine
+            /// </summary>
             public const int NumSlots = 26;
+            /// <summary>
+            /// Grace period until the slot charge time is considered overdue
+            /// </summary>
+            public const int OverdueWaitTime = 26;
             /// <todo>
             /// Implement code for file manager
             /// </todo>
@@ -146,15 +152,18 @@ namespace Qik
                 m_Slot = new Slot[NumSlots];
                 for (int i = 0; i < NumSlots; i++)
                 {
-                  m_Slot[i] = new Slot(i + 1);
+                  m_Slot[i] = new Slot(i);
                   //For now assume all slots are available till FileManager class is implemented.
                   AvailableSlots.Add(m_Slot[i]);
-                 // Console.WriteLine("Slot ID " + i + "  " + AvailableSlots.ElementAt(i).getID());
+                  m_Slot[i].SlotEvent += updateSlotStatus;
                 }
                 m_ChangeDispenser = new ChangeDispenser();
+                m_ChangeDispenser.ChangeDispenserEvent += ChangeDispenserHandler;
                 m_FileManager     = new FileManager();
                 m_MoneyMachine    = new MoneyMachine();
+                m_MoneyMachine.MoneyMachineEvent += MoneyHandler;
                 m_Printer         = new Printer();
+                m_Printer.PrinterEvent += PrinterHandler;
 
                 //Other members
                 ChargingOrRetrieving = e_ChargingOrRetrieving.CHARGING;
@@ -218,7 +227,23 @@ namespace Qik
 			/// Generates the text to be printed to screen or receipt
 			/// </summary>
 			public bool generatePrintText(){
-
+                if (ChargingOrRetrieving == e_ChargingOrRetrieving.CHARGING)
+                {
+                    printText = "Slot Selected is " + (CurrentSlot + 1) + "\r\n" +
+                                "Time is " + DateTime.Now + "\r\n" +
+                                "Charge time is  " + CurrentSlotChargeTime + "\r\n" +
+                                "Password is " + CurrentSlotPassword + "\r\n" +
+                                "Money requested was " + MoneyCharged + "\r\n" +
+                                "Money received is " + MoneyReceived + "\r\n" +
+                                "Change dispensed is " + (MoneyReceived - MoneyCharged) + "\r\n";
+                }
+                else
+                {
+                    printText = "Time is " + DateTime.Now + "\r\n" +
+                                "Money requested was " + MoneyCharged + "\r\n" +
+                                "Money received is " + MoneyReceived + "\r\n" +
+                                "Change dispensed is " + (MoneyReceived - MoneyCharged) + "\r\n";
+                }
 				return false;
 			}
 
@@ -402,18 +427,52 @@ namespace Qik
 
 			/// <summary>
 			/// Updates the sates of the SLots and the AvailableSlots and BusySlots variables.
+            /// <param name="sender">standard sender object which is Slot in this case</param>
+            /// <param name="e"> SlotEventArgs which contains information about the current 
+            /// slot </param>
 			/// </summary>
-			public bool update(){
+			public void updateSlotStatus(object sender, Slot.SlotEventArgs e)
+            {
+                Slot slot = sender as Slot;
 
-				return false;
+                switch(slot.getStatus())
+                {
+                        //Update list of slots if necessary
+                    case Slot.e_Status.OCCUPIED_CHARGING:
+                    {
+                         AvailableSlots.Remove(m_Slot[e.ID]);
+                         BusySlots.Add(m_Slot[e.ID]);
+                         break;
+                    }
+                    case Slot.e_Status.OCCUPIED_FINISHED:
+                    {
+                        BusySlots.Remove(m_Slot[e.ID]);
+                        FinishedSlots.Add(m_Slot[e.ID]);
+                        break;
+                    }
+                    case Slot.e_Status.OCCUPIED_OVERDUE:
+                    {
+                        FinishedSlots.Remove(m_Slot[e.ID]);
+                        OverdueSlots.Add(m_Slot[e.ID]);
+                        break;
+                    }
+                    default:
+                    {
+                            //post slot selection error
+                        break;
+                    }
+                }
+
 			}
 
 			/// <summary>
 			/// Show user the status of the payment process.
 			/// </summary>
-			public int updatePaymentStatus(){
+            public void updatePaymentStatus(object sender, MoneyMachine.MoneyMachineEventArgs e)
+            {
+                MoneyMachine moneyMachine = sender as MoneyMachine;
 
-				return 0;
+
 			}
             public void ChargeRetrieveEvent(object sender, QikTop.ChargeRetrieveEventArgs e)
             {
@@ -433,6 +492,16 @@ namespace Qik
                 
                 if (CurrentUIstage == e_CurrentUIstage.START_STAGE)
                 {
+                    if (e.ChargeRetrieve == e_ChargingOrRetrieving.RETRIEVING && AvailableSlots.Count == NumSlots) //Some slots are not available
+                    {
+                        //post error
+                        return;
+                    }
+                    else if (e.ChargeRetrieve == e_ChargingOrRetrieving.CHARGING && AvailableSlots.Count == 0)
+                    {
+                        //post error
+                        return;
+                    }
                     ChargingOrRetrieving = e.ChargeRetrieve;
                     CurrentUIstageState = e_CurrentUIstageState.PROCESSING_INPUT;
                     //log Status
@@ -440,10 +509,10 @@ namespace Qik
                     nextStageEvent.UI_Stage = CurrentUIstage;
                     GoToNextHandler(this, nextStageEvent);
                     //Check that the current mode is charging
-                    // QikTopForm.gotoSlotSelection();
                     CurrentUIstage = e_CurrentUIstage.SLOT_SELECTION_STAGE;
                     CurrentUIstageState = e_CurrentUIstageState.WAITING_FOR_INPUT;
-                    //log Status         
+                    //log Status
+                    nextStageEvent.ChargingOrRetrieving = ChargingOrRetrieving;
                     nextStageEvent.UI_Stage_State = CurrentUIstageState;
                     nextStageEvent.UI_Stage = CurrentUIstage;
                     GoToNextHandler(this, nextStageEvent);
@@ -477,69 +546,49 @@ namespace Qik
                     nextStageEvent.UI_Stage_State = CurrentUIstageState;
                     nextStageEvent.UI_Stage = CurrentUIstage;
                     GoToNextHandler(this, nextStageEvent);
-                    Console.WriteLine("Slot select part 1");
+                    Console.WriteLine("Slot " + (CurrentSlot + 1));
                     //Check that the current mode is charging
                     if (ChargingOrRetrieving == e_ChargingOrRetrieving.CHARGING)
                     {
                         //Update list of slots if necessary
-                      //  if (AvailableSlots.IndexOf(m_Slot[CurrentSlot]) != -1)
-                        {
-                           // AvailableSlots.Remove(m_Slot[CurrentSlot]);
-                           // BusySlots.Add(m_Slot[CurrentSlot]);
-                           // m_Slot[CurrentSlot].setStatus(Slot.e_Status.OCCUPIED_CHARGING);
+
                             CurrentUIstage = e_CurrentUIstage.CHARGE_TIME_STAGE;
                             CurrentUIstageState = e_CurrentUIstageState.WAITING_FOR_INPUT;
                             nextStageEvent.UI_Stage_State = CurrentUIstageState;
                             nextStageEvent.UI_Stage = CurrentUIstage;
                             GoToNextHandler(this, nextStageEvent); 
                             //log Status
-                        }
-                     //   else
-                        {
-                            //post slot selection error
-                        }
                     }
                     else
                     {
                         //Update list of slots if necessary
+                        System.Console.WriteLine("retrieve slot " + CurrentSlot);
                         if (BusySlots.IndexOf(m_Slot[CurrentSlot]) != -1)
                         {
-                           // BusySlots.Remove(m_Slot[CurrentSlot]);
-                           // AvailableSlots.Add(m_Slot[CurrentSlot]);
-                            // m_Slot[CurrentSlot].setStatus(Slot.e_Status.Available);
                             CurrentUIstage = e_CurrentUIstage.PASSWORD_ENTRY_STAGE;
                             CurrentUIstageState = e_CurrentUIstageState.WAITING_FOR_INPUT;
                             //log Status
                             nextStageEvent.UI_Stage_State = CurrentUIstageState;
                             nextStageEvent.UI_Stage = CurrentUIstage;
                             GoToNextHandler(this, nextStageEvent); 
-                            // mainForm.showPasswordEntrySTAGE();
                         }
                         else if (FinishedSlots.IndexOf(m_Slot[CurrentSlot]) != -1)
                         {
-                           // FinishedSlots.Remove(m_Slot[CurrentSlot]);
-                           // AvailableSlots.Add(m_Slot[CurrentSlot]);
-                            // m_Slot[CurrentSlot].setStatus(Slot.e_Status.Available);
                             CurrentUIstage = e_CurrentUIstage.PASSWORD_ENTRY_STAGE;
                             CurrentUIstageState = e_CurrentUIstageState.WAITING_FOR_INPUT;
                             //log Status
                             nextStageEvent.UI_Stage_State = CurrentUIstageState;
                             nextStageEvent.UI_Stage = CurrentUIstage;
                             GoToNextHandler(this, nextStageEvent); 
-                            // mainForm.showPasswordEntrySTAGE();
                         }
                         else if (OverdueSlots.IndexOf(m_Slot[CurrentSlot]) != -1)
                         {
-                          //  OverdueSlots.Remove(m_Slot[CurrentSlot]);
-                          //  AvailableSlots.Add(m_Slot[CurrentSlot]);
-                            // m_Slot[CurrentSlot].setStatus(Slot.e_Status.Available);
                             CurrentUIstage = e_CurrentUIstage.PAYMENT_STAGE;
                             CurrentUIstageState = e_CurrentUIstageState.WAITING_FOR_INPUT;
                             //log Status
                             nextStageEvent.UI_Stage_State = CurrentUIstageState;
                             nextStageEvent.UI_Stage = CurrentUIstage;
                             GoToNextHandler(this, nextStageEvent); 
-                            // mainForm.showPaymentSTAGE();
                         }
                         else
                         {
@@ -615,148 +664,194 @@ namespace Qik
                     CurrentSlotPassword = e.Password;
                     CurrentUIstageState = e_CurrentUIstageState.PROCESSING_INPUT;
                     //log Status
-                    //Check that the current mode is charging
-                    if (ChargingOrRetrieving == e_ChargingOrRetrieving.CHARGING)
-                    {
-                        //m_Slot[CurrentSlot].setChargeTime(CurrentSlotChargeTime);
-                        CurrentUIstage = e_CurrentUIstage.PAYMENT_STAGE;
-                        CurrentUIstageState = e_CurrentUIstageState.WAITING_FOR_INPUT;
-                        //log Status
-                        nextStageEvent.UI_Stage_State = CurrentUIstageState;
-                        nextStageEvent.UI_Stage = CurrentUIstage;
-                        GoToNextHandler(this, nextStageEvent);
-                        //log Status
-                        // mainForm.showChargeTimeSTAGE();
-                        //PaymentForm.Hide();
-
-                       // System.Threading.Thread.Sleep(2000);
-                        MoneyReceived = m_MoneyMachine.getMoney(getMoneyCharged());
-                        Console.WriteLine("Received  " + MoneyReceived);
-                        if(MoneyReceived == 0) //User didn't insert 
-                        {
-                            CurrentUIstageState = e_CurrentUIstageState.USER_ERROR;
-                         
-                        }
-                        else if (MoneyReceived == -1)//
-                        {
-                            CurrentUIstageState = e_CurrentUIstageState.HARDWARE_ERROR;
-                        }
-                        else
-                        {
-                            CurrentUIstageState = e_CurrentUIstageState.DONE;
-                            nextStageEvent.UI_Stage_State = CurrentUIstageState;
-                            nextStageEvent.UI_Stage = CurrentUIstage;
-                            //log Status
-                            GoToNextHandler(this, nextStageEvent);
-                            Console.WriteLine("Going to Insert Money");
-                            //System.Threading.Thread.Sleep(3000);
-                            //dispense change
-                            bool result = m_ChangeDispenser.dispenseChange(MoneyReceived - MoneyCharged);
-                            CurrentUIstage = e_CurrentUIstage.DISPENSE_CHANGE_STAGE;
-                            CurrentUIstageState = e_CurrentUIstageState.GENERATING_FEEDBACK;
-                            nextStageEvent.UI_Stage_State = CurrentUIstageState;
-                            nextStageEvent.UI_Stage = CurrentUIstage;
-                            //log Status
-                            GoToNextHandler(this, nextStageEvent);
-                            Console.WriteLine("Going to Dispense change");
-                           // System.Threading.Thread.Sleep(3000);
-                            if (!result)
-                            {
-                                CurrentUIstageState = e_CurrentUIstageState.HARDWARE_ERROR;
-                                //log error
-                            }
-                            else
-                            {
-                                CurrentUIstage = e_CurrentUIstage.PRINT_RECEIPT_STAGE;
-                                CurrentUIstageState = e_CurrentUIstageState.GENERATING_FEEDBACK;
-                                nextStageEvent.UI_Stage_State = CurrentUIstageState;
-                                nextStageEvent.UI_Stage = CurrentUIstage;
-                                //log Status
-                                GoToNextHandler(this, nextStageEvent);
-                                m_Printer.print("Slot Selected is " + CurrentSlot + "\r\n" +
-                                    "Time is " + DateTime.Now + "\r\n" +
-                                    "Charge time is  " + CurrentSlotChargeTime + "\r\n" +
-                                    "Password is " + CurrentSlotPassword + "\r\n" +
-                                    "Money requested was " + MoneyCharged + "\r\n" +
-                                    "Money received is " + MoneyReceived + "\r\n" +
-                                    "Change dispensed is " + (MoneyReceived - MoneyCharged) + "\r\n");
-                                CurrentUIstage = e_CurrentUIstage.PRINT_RECEIPT_STAGE;
-                                CurrentUIstageState = e_CurrentUIstageState.DONE;
-                                nextStageEvent.UI_Stage_State = CurrentUIstageState;
-                                nextStageEvent.UI_Stage = CurrentUIstage;
-                                GoToNextHandler(this, nextStageEvent);
-                                Console.WriteLine("Going to printing");
-                               // System.Threading.Thread.Sleep(2000);
-
-                                //insert device
-                                CurrentUIstage = e_CurrentUIstage.INSERT_DEVICE_STAGE;
-                                CurrentUIstageState = e_CurrentUIstageState.WAITING_FOR_INPUT;
-                                nextStageEvent.UI_Stage_State = CurrentUIstageState;
-                                nextStageEvent.UI_Stage = CurrentUIstage;
-                                GoToNextHandler(this, nextStageEvent);
-                                Console.WriteLine("Going to Insert device");
-                               // System.Threading.Thread.Sleep(2000);
-
-                                //go to start
-                                //insert device
-                                CurrentUIstage = e_CurrentUIstage.START_STAGE;
-                                CurrentUIstageState = e_CurrentUIstageState.WAITING_FOR_INPUT;
-                                nextStageEvent.UI_Stage_State = CurrentUIstageState;
-                                nextStageEvent.UI_Stage = CurrentUIstage;
-                                GoToNextHandler(this, nextStageEvent);
-                                Console.WriteLine("Going to Start");
-                            }
-                        }
-
-
-                    }
-                    else
-                    {
-                        //post error
-                    }
+                        PaymentProcess();
                 }
             }
-          /*  public void PaymentProcess(object sender, Transact.PaymentEventArgs e)
+            public void MoneyHandler(object sender, MoneyMachine.MoneyMachineEventArgs e)
             {
-                //Transact PaymentForm = sender as Transact;
-                ChargePhone ChargePhoneForm = sender as ChargePhone;
                 NextStageEventArgs nextStageEvent = new NextStageEventArgs();
                 EventHandler<NextStageEventArgs> GoToNextHandler = gotoNextStage;
                 if (GoToNextHandler == null)
                 {
                     return; //error
                 }
-                CurrentUIstageState = e_CurrentUIstageState.USER_SELECTED;
+                if (CurrentUIstage == e_CurrentUIstage.PAYMENT_STAGE && CurrentUIstageState == e_CurrentUIstageState.WAITING_FOR_INPUT )
+                {
+                                    
+                   CurrentUIstageState = e_CurrentUIstageState.PROCESSING_INPUT;
+                   MoneyReceived = e.Money;
+                   if (MoneyReceived == 0) //User didn't insert 
+                   {
+                       CurrentUIstageState = e_CurrentUIstageState.USER_ERROR;
+
+                   }
+                   else if (MoneyReceived == -1)//
+                   {
+                       CurrentUIstageState = e_CurrentUIstageState.HARDWARE_ERROR;
+                   }
+                   else
+                   {
+                       CurrentUIstageState = e_CurrentUIstageState.DONE;
+                       MoneyReceived = e.Money;
+                       Console.WriteLine("Received  " + MoneyReceived);      
+                   }
+                   nextStageEvent.UI_Stage_State = CurrentUIstageState;
+                   nextStageEvent.UI_Stage = CurrentUIstage;
+                   //log Status
+                   GoToNextHandler(this, nextStageEvent);
+
+                    //dispense change;
+                   if (MoneyReceived > MoneyCharged)
+                   {
+                       CurrentUIstage = e_CurrentUIstage.DISPENSE_CHANGE_STAGE;
+                       CurrentUIstageState = e_CurrentUIstageState.GENERATING_FEEDBACK;
+                       bool result = m_ChangeDispenser.dispenseChange(MoneyReceived - MoneyCharged);
+                   }
+                   else
+                   {
+                       CurrentUIstage = e_CurrentUIstage.PRINT_RECEIPT_STAGE;
+                       CurrentUIstageState = e_CurrentUIstageState.GENERATING_FEEDBACK;
+                       generatePrintText();
+                       m_Printer.print(printText);
+                   }
+                   nextStageEvent.UI_Stage_State = CurrentUIstageState;
+                   nextStageEvent.UI_Stage = CurrentUIstage;
+                   //log Status
+                   GoToNextHandler(this, nextStageEvent);
+                }
+
+            }
+            public void PaymentProcess()
+            {
+                NextStageEventArgs nextStageEvent = new NextStageEventArgs();
+                EventHandler<NextStageEventArgs> GoToNextHandler = gotoNextStage;
+                if (GoToNextHandler == null)
+                {
+                    return; //error
+                }
+                CurrentUIstage = e_CurrentUIstage.PAYMENT_STAGE;
+                CurrentUIstageState = e_CurrentUIstageState.WAITING_FOR_INPUT;
+                //log Status
                 nextStageEvent.UI_Stage_State = CurrentUIstageState;
                 nextStageEvent.UI_Stage = CurrentUIstage;
                 GoToNextHandler(this, nextStageEvent);
                 //log Status
-                //Check that current STAGE is the slot selection STAGE
-                if (CurrentUIstage == e_CurrentUIstage.PASSWORD_GENERATION_STAGE)
-                {
-                    CurrentSlotPassword = e.Password;
-                    CurrentUIstageState = e_CurrentUIstageState.PROCESSING_INPUT;
-                    //log Status
-                    //Check that the current mode is charging
-                    if (ChargingOrRetrieving == e_ChargingOrRetrieving.CHARGING)
-                    {
-                        //  m_Slot[CurrentSlot].setChargeTime(CurrentSlotChargeTime);
-                        CurrentUIstage = e_CurrentUIstage.PAYMENT_STAGE;
-                        CurrentUIstageState = e_CurrentUIstageState.WAITING_FOR_INPUT;
-                        //log Status
-                        nextStageEvent.UI_Stage_State = CurrentUIstageState;
-                        nextStageEvent.UI_Stage = CurrentUIstage;
-                        GoToNextHandler(this, nextStageEvent);
-                        // mainForm.showChargeTimeSTAGE();
-                        //PaymentForm.Hide();
 
+                m_MoneyMachine.getMoney(getMoneyCharged());
+                   
+                }
+
+            public void ChangeDispenserHandler(object sender, ChangeDispenser.ChangeDispenserEventArgs e)
+            {
+                NextStageEventArgs nextStageEvent = new NextStageEventArgs();
+                EventHandler<NextStageEventArgs> GoToNextHandler = gotoNextStage;
+                if (GoToNextHandler == null)
+                {
+                    return; //error
+                }
+                if (CurrentUIstage == e_CurrentUIstage.DISPENSE_CHANGE_STAGE && CurrentUIstageState == e_CurrentUIstageState.GENERATING_FEEDBACK)
+                {
+                    if (e.Result == ChangeDispenser.e_ChangeDispenserResult.FAILED) //User didn't insert 
+                    {
+                        CurrentUIstageState = e_CurrentUIstageState.HARDWARE_ERROR;
+                        return;
                     }
                     else
                     {
-                        //post error
+                        CurrentUIstageState = e_CurrentUIstageState.DONE;
+                        Console.WriteLine("Change dispensed");
                     }
+                    nextStageEvent.UI_Stage_State = CurrentUIstageState;
+                    nextStageEvent.UI_Stage = CurrentUIstage;
+                    //log Status
+                    GoToNextHandler(this, nextStageEvent);
+                    //dispense change;
+                    CurrentUIstage = e_CurrentUIstage.PRINT_RECEIPT_STAGE;
+                    CurrentUIstageState = e_CurrentUIstageState.GENERATING_FEEDBACK;
+                    m_ChangeDispenser.dispenseChange(MoneyReceived - MoneyCharged);
+                    generatePrintText();
+                    m_Printer.print(printText);
+                    nextStageEvent.UI_Stage_State = CurrentUIstageState;
+                    nextStageEvent.UI_Stage = CurrentUIstage;
+                    //log Status
+                    GoToNextHandler(this, nextStageEvent);
+                        
                 }
             }
-           * */
+            public void PrinterHandler(object sender, Printer.PrinterEventArgs e)
+            {
+                NextStageEventArgs nextStageEvent = new NextStageEventArgs();
+                EventHandler<NextStageEventArgs> GoToNextHandler = gotoNextStage;
+                if (GoToNextHandler == null)
+                {
+                    return; //error
+                }
+                if (CurrentUIstage == e_CurrentUIstage.PRINT_RECEIPT_STAGE && CurrentUIstageState == e_CurrentUIstageState.GENERATING_FEEDBACK)
+                {
+                    if (e.Result == Printer.e_PrinterResult.FAILED) //User didn't insert 
+                    {
+                        CurrentUIstageState = e_CurrentUIstageState.HARDWARE_ERROR;
+                        return;
+                    }
+                    else
+                    {
+                        CurrentUIstageState = e_CurrentUIstageState.DONE;
+                        Console.WriteLine("Printing done");
+                    }
+                }
+                nextStageEvent.UI_Stage_State = CurrentUIstageState;
+                nextStageEvent.UI_Stage = CurrentUIstage;
+                //log Status
+                GoToNextHandler(this, nextStageEvent);
+                //Instruct user
+                if (ChargingOrRetrieving == e_ChargingOrRetrieving.CHARGING)
+                {
+                    CurrentUIstage = e_CurrentUIstage.INSERT_DEVICE_STAGE;
+                    CurrentUIstageState = e_CurrentUIstageState.DONE;
+                    Console.WriteLine("Starting Slot " + CurrentSlot);
+                    m_Slot[CurrentSlot].start();
+                    BusySlots.Add(m_Slot[CurrentSlot]);
+                    AvailableSlots.Remove(m_Slot[CurrentSlot]);
+                    m_Slot[CurrentSlot].setStatus(Slot.e_Status.OCCUPIED_CHARGING);
+                }
+                else
+                {
+                    CurrentUIstage = e_CurrentUIstage.COLLECT_DEVICE_STAGE;
+                    CurrentUIstageState = e_CurrentUIstageState.DONE;
+                    BusySlots.Add(m_Slot[CurrentSlot]);
+                    AvailableSlots.Remove(m_Slot[CurrentSlot]);
+                    //Update list of slots if necessary
+                    if (BusySlots.IndexOf(m_Slot[CurrentSlot]) != -1)
+                    {
+                        BusySlots.Remove(m_Slot[CurrentSlot]);
+                        AvailableSlots.Add(m_Slot[CurrentSlot]);
+                        m_Slot[CurrentSlot].setStatus(Slot.e_Status.AVAILABLE);
+
+                    }
+                    else if (FinishedSlots.IndexOf(m_Slot[CurrentSlot]) != -1)
+                    {
+                        FinishedSlots.Remove(m_Slot[CurrentSlot]);
+                        AvailableSlots.Add(m_Slot[CurrentSlot]);
+                        m_Slot[CurrentSlot].setStatus(Slot.e_Status.AVAILABLE);
+                    }
+                    else if (OverdueSlots.IndexOf(m_Slot[CurrentSlot]) != -1)
+                    {
+                        OverdueSlots.Remove(m_Slot[CurrentSlot]);
+                        AvailableSlots.Add(m_Slot[CurrentSlot]);
+                        m_Slot[CurrentSlot].setStatus(Slot.e_Status.AVAILABLE);
+                    }
+                }
+                nextStageEvent.UI_Stage_State = CurrentUIstageState;
+                nextStageEvent.UI_Stage = CurrentUIstage;
+                //log Status
+                GoToNextHandler(this, nextStageEvent);
+                CurrentUIstage = e_CurrentUIstage.START_STAGE;
+                CurrentUIstageState = e_CurrentUIstageState.WAITING_FOR_INPUT;
+                nextStageEvent.UI_Stage_State = CurrentUIstageState;
+                nextStageEvent.UI_Stage = CurrentUIstage;
+                //log Status
+                GoToNextHandler(this, nextStageEvent);
+            }
+       
 		}//end VendingMachine
 }
